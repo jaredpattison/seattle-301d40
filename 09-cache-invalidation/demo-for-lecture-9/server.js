@@ -45,17 +45,16 @@ Location.lookupLocation = (location) => {
   return client.query(SQL, values)
     .then(result => {
       if (result.rowCount > 0) {
-        console.log('We have a match for location');
+        console.log(`We have a database match for ${result.rows[0].search_query}`);
         location.cacheHit(result);
       } else {
-        console.log('We do not have a location match');
+        console.log(`We do not have a database match for ${location.query}`);
         location.cacheMiss();
       }
     })
     .catch(console.error);
 }
 
-// Location.prototype.save = function() and so on
 Location.prototype = {
   save: function () {
     const SQL = `INSERT INTO locations (search_query, formatted_query, latitude, longitude) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id;`;
@@ -91,7 +90,7 @@ Weather.prototype = {
 }
 
 // ++++++++++++ HELPERS +++++++++++++++
-// These functions are assigned to properties on the models
+// These functions are untimately assigned to properties on the models
 
 // Checks to see if there is DB data for a given location
 function lookup(options) {
@@ -132,7 +131,7 @@ function getLocation(request, response) {
     query: request.query.data,
 
     cacheHit: function (result) {
-        console.log(result.rows[0]);
+      // console.log(result.rows[0]);
       response.send(result.rows[0]);
     },
 
@@ -143,7 +142,7 @@ function getLocation(request, response) {
         .then(result => {
           const location = new Location(this.query, result);
           location.save()
-            .then(location => response.send(location));
+            .then(location => response.status(201).send(location));
         })
         .catch(error => handleError(error));
     }
@@ -177,7 +176,7 @@ function getWeather(request, response) {
             summary.save(request.query.data.id);
             return summary;
           });
-          response.send(weatherSummaries);
+          response.status(201).send(weatherSummaries);
         })
         .catch(error => handleError(error, response));
     }
